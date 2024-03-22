@@ -77,6 +77,7 @@ impl Crowdfunding {
         let donated_amount = near_sdk::env::attached_deposit();
 
         if let Some(project) = self.projects.get_mut(&id) {
+            // TODO: fix the deadline project before donate.
             // let now:u64 = chrono::offset::Local::now().timestamp().try_into().unwrap();
             // if  now <= project.deadline {
             //     // Update the amount of the project
@@ -95,7 +96,7 @@ impl Crowdfunding {
             near_sdk::env::panic_str("Project not found.");
         }
     }
-    
+    // TODO: fix and evaluate the claim method to transfer the value to the owner of project.
     // pub fn claim(&self, id: u64) {
     //     let owner = near_sdk::env::predecessor_account_id();
     //     if let Some(project) = self.projects.get(&id) {
