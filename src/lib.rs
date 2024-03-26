@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 // Find all our documentation at https://docs.near.org
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{near_bindgen, Promise};
+use near_sdk::env::log_str;
+use near_sdk::{env, near_bindgen};
 use near_sdk::serde::{Serialize, Deserialize};
-// use chrono;
 
 // Define the contract structure
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
@@ -78,19 +78,19 @@ impl Crowdfunding {
 
         if let Some(project) = self.projects.get_mut(&id) {
             // TODO: fix the deadline project before donate.
-            // let now:u64 = chrono::offset::Local::now().timestamp().try_into().unwrap();
-            // if  now <= project.deadline {
-            //     // Update the amount of the project
-            //     project.amount += donated_amount;
+            let now:u64 = env::block_timestamp_ms();
+            log_str(&format!("Now: {now}. Deadline {0}", project.deadline));
+            if  now <= project.deadline {
+                // Update the amount of the project
+                project.amount += donated_amount;
     
-            //     // Add the donation to the project's donations HashMap
-            //     let donations = &mut project.donations;
-            //     *donations.entry(caller_account_id.clone()).or_insert(0) += donated_amount;
-            // } else {
-            //     // Handle case where deadline has passed
-            //     near_sdk::env::panic_str("The deadline for this project has passed.");
-            // }
-            near_sdk::env::panic_str("The deadline for this project has passed.");
+                // Add the donation to the project's donations HashMap
+                let donations = &mut project.donations;
+                *donations.entry(caller_account_id.clone()).or_insert(0) += donated_amount;
+            } else {
+                // Handle case where deadline has passed
+                near_sdk::env::panic_str("The deadline for this project has passed.");
+            }
         } else {
             // Handle case where project ID does not exist
             near_sdk::env::panic_str("Project not found.");
@@ -127,8 +127,7 @@ mod tests {
         };
 
         // // Create project
-        let current_time_utc = chrono::offset::Utc::now();
-        let deadline: u64 = current_time_utc.timestamp() as u64;
+        let deadline: u64 = env::block_timestamp();
         let name = "Test".to_string();
         let description = "Test description".to_string();
         let target = 100;
@@ -150,14 +149,14 @@ mod tests {
         assert_eq!(project.deadline, deadline);
 
         // First donation
-        // set_context("donation_account_2", Some(2*NEAR));
-        // contract.donate(*id);
-        // let projects = contract.get_projects();
-        // let (_, project) = projects.iter().next().expect("No projects found");
-        // let (donation_account_id, &donation) = project.donations.iter().next().expect("No donations found");
-        // assert_eq!(donation_account_id.to_string(), "donation_account_2");
-        // assert_eq!(donation, 2*NEAR);
-        // assert_eq!(project.amount, 2*NEAR);
+        set_context("donation_account_2", Some(2*NEAR));
+        contract.donate(*id);
+        let projects = contract.get_projects();
+        let (_, project) = projects.iter().next().expect("No projects found");
+        let (donation_account_id, &donation) = project.donations.iter().next().expect("No donations found");
+        assert_eq!(donation_account_id.to_string(), "donation_account_2");
+        assert_eq!(donation, 2*NEAR);
+        assert_eq!(project.amount, 2*NEAR);
 
         // contract.claim(*id);
 
