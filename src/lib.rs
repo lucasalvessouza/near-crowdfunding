@@ -3,7 +3,7 @@ use std::collections::HashMap;
 // Find all our documentation at https://docs.near.org
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::env::log_str;
-use near_sdk::{env, near_bindgen};
+use near_sdk::{env, near_bindgen, Promise};
 use near_sdk::serde::{Serialize, Deserialize};
 
 // Define the contract structure
@@ -77,7 +77,6 @@ impl Crowdfunding {
         let donated_amount = near_sdk::env::attached_deposit();
 
         if let Some(project) = self.projects.get_mut(&id) {
-            // TODO: fix the deadline project before donate.
             let now:u64 = env::block_timestamp_ms();
             log_str(&format!("Now: {now}. Deadline {0}", project.deadline));
             if  now <= project.deadline {
@@ -96,19 +95,23 @@ impl Crowdfunding {
             near_sdk::env::panic_str("Project not found.");
         }
     }
-    // TODO: fix and evaluate the claim method to transfer the value to the owner of project.
-    // pub fn claim(&self, id: u64) {
-    //     let owner = near_sdk::env::predecessor_account_id();
-    //     if let Some(project) = self.projects.get(&id) {
-    //         if project.owner == owner {
-    //             Promise::new(owner).transfer(project.amount);
-    //         } else {
-    //             near_sdk::env::panic_str("You are not the owner of this contract.");
-    //         }
-    //     } else {
-    //         near_sdk::env::panic_str("Project not found.");
-    //     }
-    // }
+    pub fn claim(&self, id: u64) {
+        let owner = near_sdk::env::predecessor_account_id();
+        if let Some(project) = self.projects.get(&id) {
+            let now:u64 = env::block_timestamp_ms();
+            log_str(&format!("Now: {now}. Deadline {0}", project.deadline));
+            if  now > project.deadline {
+                near_sdk::env::panic_str("The project can be claimed just after the deadline ends.");
+            }
+            if project.owner == owner {
+                Promise::new(owner).transfer(project.amount);
+            } else {
+                near_sdk::env::panic_str("You are not the owner of this contract.");
+            }
+        } else {
+            near_sdk::env::panic_str("Project not found.");
+        }
+    }
 }
 
 #[cfg(test)]
